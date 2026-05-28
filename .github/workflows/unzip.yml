@@ -21,12 +21,19 @@ jobs:
 
     - name: Unzip Files
       run: |
-        # 假设压缩包名为 archive.zip，解压到当前目录
-        # -o 表示覆盖已有文件，-d 指定解压目录
-        if [ -f "archive.zip" ]; then
-          unzip -o archive.zip -d ./
-          rm archive.zip # 解压后删除压缩包，避免占用双倍空间
-        fi
+        # 使用 shopt 确保找不到匹配时不报错
+        shopt -s nullglob
+        
+        # 动态遍历当前目录下的所有 .zip 文件
+        for zip_file in *.zip; do
+          if [ -f "$zip_file" ]; then
+            echo "Processing $zip_file ..."
+            # 解压到当前目录，-o 表示覆盖已有文件
+            unzip -o "$zip_file" -d ./
+            # 解压后删除该压缩包
+            rm "$zip_file"
+          fi
+        done
 
     - name: Commit and Push Changes
       run: |
