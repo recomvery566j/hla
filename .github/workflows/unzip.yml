@@ -1,0 +1,45 @@
+name: Unzip and Commit Files
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '*.zip' # 仅在上传 zip 压缩包时触发
+
+jobs:
+  unzip-process:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 赋予 Action 推送代码的写权限
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # 获取完整历史记录
+
+    - name: Unzip Files
+      run: |
+        # 假设压缩包名为 archive.zip，解压到当前目录
+        # -o 表示覆盖已有文件，-d 指定解压目录
+        if [ -f "archive.zip" ]; then
+          unzip -o archive.zip -d ./
+          rm archive.zip # 解压后删除压缩包，避免占用双倍空间
+        fi
+
+    - name: Commit and Push Changes
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        
+        git add .
+        
+        # 检查是否有文件变动，避免无变动时报错
+        if ! git diff --cached --quiet; then
+          # 使用 [skip ci] 避免触发下一次 Actions 导致死循环
+          git commit -m "chore: auto unzip archive [skip ci]"
+          git push origin main
+        else
+          echo "No changes to commit"
+        fi
